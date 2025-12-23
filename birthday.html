@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Happy Birthday Amma</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+      font-family: monospace;
+      color: #04492aff;
+    }
+    #screen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      font-size: 1.4rem;
+      text-align: center;
+    }
+    .hidden { display: none; }
+    #heartsCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    input {
+      background: black;
+      border: 1px solid #00ffea;
+      color: #00ffea;
+      padding: 10px;
+      margin-top: 15px;
+      font-size: 1.2rem;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 25px;
+      background: #00ffea;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="heartsCanvas"></canvas>
+<div id="screen">
+  <div id="errorPage">
+    <p>⚠️ Error: Page not found.</p>
+    <button onclick="startSequence()">ENTER</button>
+  </div>
+
+  <div id="loadingMsg" class="hidden"></div>
+
+  <div id="askBirthYear" class="hidden">
+    <p>It's your birthday, right?<br>Let me guess your age...</p>
+    <p>Enter your year of birth:</p>
+    <input id="birthYearInput" type="number" placeholder="YYYY" />
+    <button onclick="processAge()">Submit</button>
+  </div>
+
+  <div id="finalMessage" class="hidden"></div>
+</div>
+
+<script>
+  const screen = document.getElementById("screen");
+  const loadingMsg = document.getElementById("loadingMsg");
+  const askBirthYear = document.getElementById("askBirthYear");
+  const finalMessage = document.getElementById("finalMessage");
+
+  function startSequence() {
+    document.getElementById("errorPage").classList.add("hidden");
+
+    setTimeout(() => {
+      showSequentialText([
+        "Initializing system...",
+        "Scanning user...",
+        "Identified: Amma ❤️",
+        "Loading birthday protocol..."
+      ], () => {
+        askBirthYear.classList.remove("hidden");
+      });
+    }, 1000);
+  }
+
+  function showSequentialText(lines, callback) {
+    let i = 0;
+    loadingMsg.classList.remove("hidden");
+
+    const interval = setInterval(() => {
+      loadingMsg.innerHTML += lines[i] + "<br>";
+      i++;
+      if (i >= lines.length) {
+        clearInterval(interval);
+        setTimeout(callback, 1000);
+      }
+    }, 1200);
+  }
+
+  function processAge() {
+    const year = document.getElementById("birthYearInput").value;
+    if (!year) return;
+
+    askBirthYear.classList.add("hidden");
+
+    const funLines = [
+      "Thinking in progress...",
+      "This is a big answer to calculate...",
+      "Calculating...",
+    ];
+
+    loadingMsg.innerHTML = "";
+
+    showSequentialText(funLines, () => {
+      const age = new Date().getFullYear() - parseInt(year);
+      showFinal(age);
+    });
+  }
+
+  function showFinal(age) {
+    loadingMsg.classList.add("hidden");
+    finalMessage.classList.remove("hidden");
+    finalMessage.innerHTML = `<p style="color:#ff4da6; font-size:2rem;">I love you Amma ❤️<br>Happy ${age}th Birthday!</p>`;
+    startHearts();
+  }
+
+  // HEART ANIMATION
+  const canvas = document.getElementById("heartsCanvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  let hearts = [];
+  let mouse = { x: 0, y: 0 };
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  mouse.x = e.clientX - rect.left;
+  mouse.y = e.clientY - rect.top;
+});
+
+
+  function startHearts() {
+    for (let i = 0; i < 120; i++) {
+      hearts.push(createHeart());
+    }
+    animateHearts();
+    
+  }
+
+  function createHeart() {
+  return {
+    x: Math.random() * canvas.width,
+    y: canvas.height,
+    size: 20 + Math.random() * 20,
+    speed: 1 + Math.random() * 1.5,
+    vy: 0,
+    state: "up" // up → falling → rest
+  };
+}
+
+
+  function drawHeart(x, y, size) {
+    ctx.fillStyle = "#ff4da6";
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.bezierCurveTo(x + size / 2, y - size / 2, x + size, y + size / 3, x, y + size);
+    ctx.bezierCurveTo(x - size, y + size / 3, x - size / 2, y - size / 2, x, y);
+    ctx.fill();
+  }
+
+  function animateHearts() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  hearts.forEach(h => {
+
+    // ❤️ Move UP until it touches the top
+    if (h.state === "up") {
+      h.y -= h.speed;
+
+      if (h.y <= 0 + h.size) {
+        h.state = "falling";
+        h.vy = 0;
+      }
+    }
+
+    // 💥 Now FALL down with gravity
+    else if (h.state === "falling") {
+
+      h.vy += 0.2; // gravity
+      h.y += h.vy;
+
+      // Stop at bottom
+      if (h.y >= canvas.height - h.size) {
+        h.y = canvas.height - h.size;
+        h.state = "rest";
+      }
+    }
+
+    // 🧘‍♂️ REST but react to mouse
+    else if (h.state === "rest") {
+      let dx = h.x - mouse.x;
+      let dy = h.y - mouse.y;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+
+      // If mouse comes close, push heart away
+      if (dist < 80) {
+        h.x += dx * 0.08; // move away
+        h.y += dy * 0.08;
+      }
+    }
+
+    // Draw the heart
+    drawHeart(h.x, h.y, h.size);
+  });
+
+  requestAnimationFrame(animateHearts);
+}
+
+</script>
+
+</body>
+</html>
